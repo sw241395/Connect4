@@ -170,6 +170,7 @@ function MinMax(temp_board, player, iteration)
                 score = score_4s(temp_board)
 
             scores[key] = score;
+
         } 
     }
 
