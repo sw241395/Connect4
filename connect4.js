@@ -64,7 +64,7 @@ function drop(col_numb)
 }
 
 
-// Check tho board and output a message if anyone has won
+// Check the board and output a message if anyone has won
 function check()
 {
     let check = check_board(board);
@@ -128,11 +128,10 @@ function reset()
 function MinMax(temp_board, player, iteration)
 {
     let choices = generate_next_moves(temp_board, player)
+    let scores = {}
 
     if (iteration < MAX_ITERATIONS)
     {
-        let scores = {}
-
         for (const [key, val] of Object.entries(choices))
         {
             let temp_iteration = iteration + 1;
@@ -140,73 +139,70 @@ function MinMax(temp_board, player, iteration)
 
             if (check == AI)
             {
-                scores[key] = 14;
+                scores[key] = 100;
                 break;
             }
             else if (check == PLAYER)
             {
-                scores[key] = -14;
+                scores[key] = -100;
                 break;
             }
             else if (player == AI)
-            {
                 output = MinMax(val, PLAYER, temp_iteration);
-            }
             else
-            {
                 output = MinMax(val, AI, temp_iteration);
-            }
+            
             scores[key] = output[1];
-        }
-        
-        // After loop, output the next output for the AI
-        if (player == AI)
-        {
-            let max_value = Math.max(...Object.values(scores));
-
-            // get the keys for where the values is equal to the max value
-            let optimum_choices = [];
-            Object.entries(scores).forEach(([key, value]) => {
-                if (value == max_value)
-                    optimum_choices.push(key);
-            });
-            
-            // Get random item from list
-            let optimum_choice = optimum_choices[Math.floor(Math.random()*optimum_choices.length)];
-
-            return [optimum_choice, max_value]   
-        }
-        else
-        {
-            let min_value = Math.min(...Object.values(scores));
-
-            // get the keys for where the values is equal to the max value
-            let optimum_choices = [];
-            Object.entries(scores).forEach(([key, value]) => {
-                if (value == min_value)
-                    optimum_choices.push(key);
-            });
-            
-            // Get random item from list
-            let optimum_choice = optimum_choices[Math.floor(Math.random()*optimum_choices.length)];
-
-            return [optimum_choice, min_value]  
         }
     }
     else
     {
         // Calculate score of 7 outcomes 
-        let score = 0
         for (const [key, val] of Object.entries(choices))
         {
+            let score;
             let check = check_board(val);
             if (check == PLAYER)
-                score++;
+                score = -100;
             else if (check == AI)
-                score--;
-        } 
+                score = 100;
+            else
+                score = score_4s(temp_board)
 
-        return [0, score];
+            scores[key] = score;
+        } 
+    }
+
+    // After loop, output the next output for the AI
+    if (player == AI)
+    {
+        let max_value = Math.max(...Object.values(scores));
+    
+        // get the keys for where the values is equal to the max value
+        let optimum_choices = [];
+        Object.entries(scores).forEach(([key, value]) => {
+            if (value == max_value)
+                optimum_choices.push(key);
+        });
+                
+        // Get random item from list
+        let optimum_choice = optimum_choices[Math.floor(Math.random()*optimum_choices.length)];
+
+        return [optimum_choice, max_value]   
+    }
+    else
+    {
+        let min_value = Math.min(...Object.values(scores));
+    
+        let optimum_choices = [];
+        Object.entries(scores).forEach(([key, value]) => {
+            if (value == min_value)
+                optimum_choices.push(key);
+        });
+                
+        let optimum_choice = optimum_choices[Math.floor(Math.random()*optimum_choices.length)];
+    
+        return [optimum_choice, min_value]  
     }
 }
 
@@ -291,4 +287,79 @@ function check_board(temp_board)
 }
 
 
+// Method to improve the AI
+// Count the number of 3 in a row there could be for the AI or player and then choose best path for AI
+function score_4s(temp_board)
+{
+    let score = 0;
 
+    // check horizontal
+    for (let c = 0; c < COLUMN_COUNT - 3; c++)
+    {
+        for (let r = 0; r < ROW_COUNT; r++)
+        {   
+            // Collect the 4 cells and set up counts
+            let quad = [temp_board[r][c], temp_board[r][c+1], temp_board[r][c+2], temp_board[r][c+3]];
+            score = count_4s(quad, score)
+        }
+    }
+
+    // check vertical
+    for (let c = 0; c < COLUMN_COUNT; c++)
+    {
+        for (let r = 0; r < ROW_COUNT - 3; r++)
+        {
+            let quad = [temp_board[r][c], temp_board[r+1][c], temp_board[r+2][c], temp_board[r+3][c]]
+            score = count_4s(quad, score)
+        }
+    }
+
+    // Check diagonal
+    for (let c = 0; c < COLUMN_COUNT - 3; c++)
+    {
+        for (let r = 0; r < ROW_COUNT - 3; r++)
+        {
+            let quad  = [temp_board[r][c], temp_board[r+1][c+1], temp_board[r+2][c+2],  temp_board[r+3][c+3]]
+            score = count_4s(quad, score)
+        }
+    }
+
+    // Check other diagonal
+    for (let c = 0; c < COLUMN_COUNT - 3; c++)
+    {
+        for (let r = 3; r < ROW_COUNT; r++)
+        {
+            let quad = [temp_board[r][c], temp_board[r-1][c+1], temp_board[r-2][c+2], temp_board[r-3][c+3]]
+            score = count_4s(quad, score)
+        }
+    }
+
+    return score;
+}
+
+
+function count_4s(temp_quad, temp_score)
+{
+    let ai_count = 0
+    let player_count = 0
+    let empty_count = 0
+
+    // count the 4 cells
+    for (let quarter = 0; quarter < temp_quad.length; quarter++)
+    {
+        if (temp_quad[quarter] == AI)
+            ai_count++;
+        else if (temp_quad[quarter] == PLAYER)
+            player_count++;
+        else
+            empty_count++;
+    }
+
+    // if there are 3 AI or Player and 1 empty then adjust the score accordingly
+    if (ai_count == 3 && empty_count == 1)
+        temp_score++;
+    else if (player_count == 3 && empty_count == 1)
+        temp_score--;
+    
+    return temp_score;
+}
