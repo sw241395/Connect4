@@ -140,12 +140,12 @@ function MinMax(temp_board, player, iteration)
 
             if (check == AI)
             {
-                scores[key] = 14;
+                scores[key] = 7;
                 break;
             }
             else if (check == PLAYER)
             {
-                scores[key] = -14;
+                scores[key] = -7;
                 break;
             }
             else if (player == AI)
@@ -201,9 +201,9 @@ function MinMax(temp_board, player, iteration)
         {
             let check = check_board(val);
             if (check == PLAYER)
-                score++;
-            else if (check == AI)
                 score--;
+            else if (check == AI)
+                score++;
         } 
 
         return [0, score];
